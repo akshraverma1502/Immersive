@@ -1,42 +1,70 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>VR Laparoscopic Trainer</title>
+    <title>Laparoscopic VR Trainer</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
+    <script>
+      // LOGIC FOR SCENE TRANSITIONS (The "Story Engine")
+      AFRAME.registerComponent('scene-manager', {
+        init: function () {
+          this.currentScene = 0;
+          this.el.addEventListener('next-scene', () => {
+            this.currentScene++;
+            this.updateScene();
+          });
+        },
+        updateScene: function() {
+          const lobby = document.querySelector('#lobby-assets');
+          const ot = document.querySelector('#ot-assets');
+          const internal = document.querySelector('#internal-view');
+          
+          if(this.currentScene === 1) { // Transition to Scene 1.1: Enter OT
+            lobby.setAttribute('visible', 'false');
+            ot.setAttribute('visible', 'true');
+            document.querySelector('#bg').setAttribute('environment', 'preset: hospital');
+          }
+          if(this.currentScene === 2) { // Transition to Scene 2.5: Complication
+            document.querySelector('#emergency-alert').setAttribute('visible', 'true');
+            document.querySelector('#rig').setAttribute('animation', 'property: position; to: 0.01 0.01 0.01; dur: 100; loop: true; dir: alternate');
+          }
+        }
+      });
+
+      // ARDUINO SIMULATION (Spacebar triggers "Next Scene")
+      window.addEventListener('keydown', (e) => {
+        if(e.code === 'Space') document.querySelector('a-scene').emit('next-scene');
+      });
+    </script>
   </head>
   <body>
-    <a-scene>
-      <a-assets>
-        </a-assets>
+    <a-scene scene-manager>
+      <a-entity id="bg" environment="preset: contact; lighting: point"></a-entity>
 
-      <a-entity environment="preset: contact; skyType: gradient; lighting: point"></a-entity>
+      <a-entity id="lobby-assets">
+        <a-text value="SCENE 0.1: VIRTUAL LOBBY\nGrab tools to calibrate" position="0 2.5 -2" align="center" color="#fff"></a-text>
+        <a-sphere id="start-button" position="0 1.2 -1" radius="0.2" color="green" 
+                  animation="property: scale; to: 1.1 1.1 1.1; dir: alternate; loop: true">
+          <a-text value="START" position="0 0.3 0" align="center" width="4"></a-text>
+        </a-sphere>
+      </a-entity>
 
-      <a-box position="0 0.8 -2" width="1" height="0.5" depth="2" color="#cccccc">
-        <a-text value="SURGICAL FIELD" align="center" position="0 0.3 0" rotation="-90 0 0" color="black"></a-text>
-      </a-box>
+      <a-entity id="ot-assets" visible="false">
+        <a-box position="0 0.8 -1.5" width="1.5" height="0.1" depth="2" color="white"></a-box> <a-text value="SCENE 1.1: OT SETUP\nFollow Sterilization Protocol" position="0 2.2 -1.5" align="center"></a-text>
+      </a-entity>
 
-      <a-entity id="ui-panel" position="0 2 -1.5">
-        <a-plane color="#222" width="2" height="1" opacity="0.8"></a-plane>
-        <a-text value="Laparoscopic Appendectomy\nStep 1: Calibrate Tools" align="center" position="0 0 0.1" width="3"></a-text>
+      <a-entity id="internal-view" visible="false">
+        <a-plane position="0 2 -1.2" width="1.5" height="1" color="#000">
+           <a-circle position="0 0 0.01" radius="0.3" color="pink"></a-circle> <a-text id="emergency-alert" value="WARNING: BLEEDING!" visible="false" color="red" position="0 -0.4 0.02" align="center"></a-text>
+        </a-plane>
       </a-entity>
 
       <a-entity id="rig">
         <a-camera position="0 1.6 0"></a-camera>
-        
-        <a-entity oculus-touch-controls="hand: left">
-            <a-cylinder color="silver" height="0.3" radius="0.01" rotation="90 0 0"></a-cylinder>
-        </a-entity>
-
-        <a-entity oculus-touch-controls="hand: right">
-            <a-cylinder color="silver" height="0.3" radius="0.01" rotation="90 0 0"></a-cylinder>
-        </a-entity>
+        <a-entity id="left-tool" hand-controls="hand: left" color="silver"></a-entity>
+        <a-entity id="right-tool" hand-controls="hand: right" color="silver"></a-entity>
       </a-entity>
 
-      <a-plane id="monitor" position="1.5 1.8 -1.8" rotation="0 -30 0" width="1.2" height="0.8" color="#000">
-        <a-text value="Internal Feed" position="0 0.5 0.01" align="center" width="2"></a-text>
-        </a-plane>
-      
     </a-scene>
   </body>
 </html>
